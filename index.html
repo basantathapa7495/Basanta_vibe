@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1 Crore Challenge - Million Rupee Goal Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-cog"></i> Settings</h2>
+                <button class="close-btn" onclick="closeSettings()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h3>Goal Settings</h3>
+                    <div class="form-group">
+                        <label for="goalAmount">Target Amount (NPR)</label>
+                        <input type="number" id="goalAmount" placeholder="1000000">
+                    </div>
+                    <div class="form-group">
+                        <label for="deadline">Deadline Date</label>
+                        <input type="date" id="deadline">
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <h3>Appearance</h3>
+                    <div class="form-group">
+                        <label>Theme</label>
+                        <div class="theme-options">
+                            <button class="theme-btn" onclick="setTheme('light')">
+                                <i class="fas fa-sun"></i> Light
+                            </button>
+                            <button class="theme-btn" onclick="setTheme('dark')">
+                                <i class="fas fa-moon"></i> Dark
+                            </button>
+                            <button class="theme-btn" onclick="setTheme('system')">
+                                <i class="fas fa-desktop"></i> System
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <h3>Data Management</h3>
+                    <div class="form-group">
+                        <button class="btn btn-export" onclick="exportData()">
+                            <i class="fas fa-download"></i> Export Data
+                        </button>
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-import" onclick="importData()">
+                            <i class="fas fa-upload"></i> Import Data
+                        </button>
+                        <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleImport(event)">
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-danger" onclick="confirmReset()">
+                            <i class="fas fa-trash"></i> Reset All Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeSettings()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Income Modal -->
+    <div id="addIncomeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-plus-circle"></i> Add Income</h2>
+                <button class="close-btn" onclick="closeAddIncome()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="incomeAmount">Amount (NPR)</label>
+                    <input type="number" id="incomeAmount" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label for="incomeDate">Date</label>
+                    <input type="date" id="incomeDate">
+                </div>
+                <div class="form-group">
+                    <label for="incomeNotes">Notes (Optional)</label>
+                    <textarea id="incomeNotes" placeholder="Add a note about this income..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeAddIncome()">Cancel</button>
+                <button class="btn btn-primary" onclick="addIncomeEntry()">Add Income</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Income Modal -->
+    <div id="editIncomeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Edit Income</h2>
+                <button class="close-btn" onclick="closeEditIncome()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editIncomeId">
+                <div class="form-group">
+                    <label for="editIncomeAmount">Amount (NPR)</label>
+                    <input type="number" id="editIncomeAmount" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label for="editIncomeDate">Date</label>
+                    <input type="date" id="editIncomeDate">
+                </div>
+                <div class="form-group">
+                    <label for="editIncomeNotes">Notes (Optional)</label>
+                    <textarea id="editIncomeNotes" placeholder="Add a note about this income..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeEditIncome()">Cancel</button>
+                <button class="btn btn-primary" onclick="updateIncomeEntry()">Update Income</button>
+                <button class="btn btn-danger" onclick="confirmDeleteIncome()">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Confirm</h2>
+                <button class="close-btn" onclick="closeConfirmModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="executeConfirmAction()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Achievement Toast -->
+    <div id="achievementToast" class="toast">
+        <div class="toast-content">
+            <i class="fas fa-trophy"></i>
+            <div class="toast-message">
+                <h4 id="achievementTitle">Achievement Unlocked!</h4>
+                <p id="achievementDesc"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-rocket"></i>
+                    <h1>1 Crore Challenge</h1>
+                </div>
+                <button class="sidebar-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-section="dashboard">
+                    <i class="fas fa-th-large"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-section="tracker">
+                    <i class="fas fa-calendar-day"></i>
+                    <span>Daily Tracker</span>
+                </a>
+                <a href="#" class="nav-item" data-section="analytics">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Analytics</span>
+                </a>
+                <a href="#" class="nav-item" data-section="calculator">
+                    <i class="fas fa-calculator"></i>
+                    <span>Goal Calculator</span>
+                </a>
+                <a href="#" class="nav-item" data-section="achievements">
+                    <i class="fas fa-trophy"></i>
+                    <span>Achievements</span>
+                </a>
+                <a href="#" class="nav-item" data-section="calendar">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Calendar</span>
+                </a>
+                <a href="#" class="nav-item" data-section="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="progress-summary">
+                    <div class="progress-text">
+                        <span id="sidebarProgress">0%</span>
+                        <span>Complete</span>
+                    </div>
+                    <div class="progress-bar-small">
+                        <div class="progress-fill" id="sidebarProgressBar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="total-earned">
+                    <span>Earned:</span>
+                    <span id="sidebarEarned">NPR 0</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-left">
+                    <button class="menu-btn" onclick="toggleSidebar()">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="header-title">
+                        <h2 id="pageTitle">Dashboard</h2>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="countdown-timer">
+                        <i class="fas fa-clock"></i>
+                        <span id="countdown">00:00:00:00</span>
+                    </div>
+                    <button class="btn btn-add" onclick="openAddIncome()">
+                        <i class="fas fa-plus"></i>
+                        <span class="btn-text">Add Income</span>
+                    </button>
+                    <button class="btn btn-icon" onclick="openSettings()">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="section active">
+                <div class="section-header">
+                    <h1>Dashboard</h1>
+                    <p class="subtitle">Track your progress toward 1 Crore</p>
+                </div>
+
+                <!-- Motivation Banner -->
+                <div class="motivation-banner">
+                    <div class="banner-content">
+                        <div class="banner-icon">
+                            <i class="fas fa-fire"></i>
+                        </div>
+                        <div class="banner-text">
+                            <h3 id="motivationQuote">"Every rupee counts. Keep going!"</h3>
+                            <p id="motivationMessage">You are 0% closer to your dream.</p>
+                        </div>
+                    </div>
+                    <div class="banner-progress">
+                        <div class="circular-progress">
+                            <div class="progress-value" id="circularProgressValue">0%</div>
+                            <svg class="progress-circle" viewBox="0 0 100 100">
+                                <circle class="progress-bg" cx="50" cy="50" r="45"></circle>
+                                <circle class="progress-fill" cx="50" cy="50" r="45" id="circularProgress"></circle>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-bullseye"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total Goal</span>
+                            <span class="stat-value" id="totalGoal">NPR 1,00,00,000</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Total Earned</span>
+                            <span class="stat-value" id="totalEarned">NPR 0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-coins"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Remaining Amount</span>
+                            <span class="stat-value" id="remainingAmount">NPR 1,00,00,000</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Percentage Completed</span>
+                            <span class="stat-value" id="percentageCompleted">0%</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Days Passed</span>
+                            <span class="stat-value" id="daysPassed">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-calendar-times"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Days Remaining</span>
+                            <span class="stat-value" id="daysRemaining">365</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-target"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Today's Target</span>
+                            <span class="stat-value" id="todaysTarget">NPR 2,740</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Today's Earnings</span>
+                            <span class="stat-value" id="todaysEarnings">NPR 0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Avg Daily Earnings</span>
+                            <span class="stat-value" id="avgDailyEarnings">NPR 0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div class="stat-info">
+                            <span class="stat-label">Required Daily</span>
+                            <span class="stat-value" id="requiredDaily">NPR 2,740</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <h3>Quick Actions</h3>
+                    <div class="action-buttons">
+                        <button class="action-btn" onclick="openAddIncome()">
+                            <i class="fas fa-plus"></i>
+                            <span>Add Today's Income</span>
+                        </button>
+                        <button class="action-btn" onclick="showRecentEntries()">
+                            <i class="fas fa-history"></i>
+                            <span>Recent Entries</span>
+                        </button>
+                        <button class="action-btn" onclick="showAnalytics()">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>View Analytics</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recent Entries Preview -->
+                <div class="recent-entries">
+                    <h3>Recent Income Entries</h3>
+                    <div class="entries-table" id="recentEntriesTable">
+                        <p class="no-data">No income entries yet. Add your first entry!</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Daily Tracker Section -->
+            <section id="tracker" class="section">
+                <div class="section-header">
+                    <h1>Daily Income Tracker</h1>
+                    <p class="subtitle">Log your daily earnings</p>
+                </div>
+
+                <div class="tracker-header">
+                    <div class="tracker-stats">
+                        <div class="tracker-stat">
+                            <span class="tracker-stat-label">Today's Total</span>
+                            <span class="tracker-stat-value" id="trackerTodaysTotal">NPR 0</span>
+                        </div>
+                        <div class="tracker-stat">
+                            <span class="tracker-stat-label">This Week</span>
+                            <span class="tracker-stat-value" id="trackerThisWeek">NPR 0</span>
+                        </div>
+                        <div class="tracker-stat">
+                            <span class="tracker-stat-label">This Month</span>
+                            <span class="tracker-stat-value" id="trackerThisMonth">NPR 0</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" onclick="openAddIncome()">
+                        <i class="fas fa-plus"></i> Add Income
+                    </button>
+                </div>
+
+                <div class="income-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="quickAmount">Amount (NPR)</label>
+                            <input type="number" id="quickAmount" placeholder="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="quickDate">Date</label>
+                            <input type="date" id="quickDate">
+                        </div>
+                        <div class="form-group">
+                            <label for="quickNotes">Notes</label>
+                            <input type="text" id="quickNotes" placeholder="Optional note">
+                        </div>
+                        <button class="btn btn-success" onclick="quickAddIncome()">
+                            <i class="fas fa-check"></i> Add
+                        </button>
+                    </div>
+                </div>
+
+                <div class="entries-container">
+                    <div class="entries-header">
+                        <h3>Income History</h3>
+                        <div class="filter-controls">
+                            <select id="filterMonth" onchange="filterEntries()">
+                                <option value="all">All Months</option>
+                            </select>
+                            <input type="text" id="searchEntries" placeholder="Search notes..." oninput="filterEntries()">
+                        </div>
+                    </div>
+                    <div class="entries-table-container">
+                        <table class="entries-table-full" id="incomeHistoryTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Notes</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="incomeHistoryBody">
+                                <tr class="no-data-row">
+                                    <td colspan="4">No income entries yet. Add your first entry!</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section id="analytics" class="section">
+                <div class="section-header">
+                    <h1>Analytics</h1>
+                    <p class="subtitle">Detailed insights into your earnings</p>
+                </div>
+
+                <div class="analytics-grid">
+                    <div class="analytics-card">
+                        <div class="analytics-icon">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                        <div class="analytics-info">
+                            <span class="analytics-label">Highest Earning Day</span>
+                            <span class="analytics-value" id="highestDay">-</span>
+                        </div>
+                    </div>
+                    <div class="analytics-card">
+                        <div class="analytics-icon">
+                            <i class="fas fa-calendar-minus"></i>
+                        </div>
+                        <div class="analytics-info">
+                            <span class="analytics-label">Lowest Earning Day</span>
+                            <span class="analytics-value" id="lowestDay">-</span>
+                        </div>
+                    </div>
+                    <div class="analytics-card">
+                        <div class="analytics-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="analytics-info">
+                            <span class="analytics-label">Average Earnings</span>
+                            <span class="analytics-value" id="avgEarnings">NPR 0</span>
+                        </div>
+                    </div>
+                    <div class="analytics-card">
+                        <div class="analytics-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <div class="analytics-info">
+                            <span class="analytics-label">Best Month</span>
+                            <span class="analytics-value" id="bestMonth">-</span>
+                        </div>
+                    </div>
+                    <div class="analytics-card">
+                        <div class="analytics-icon">
+                            <i class="fas fa-fire"></i>
+                        </div>
+                        <div class="analytics-info">
+                            <span class="analytics-label">Current Streak</span>
+                            <span class="analytics-value" id="currentStreak">0 days</span>
+                        </div>
+                    </div>
+                    <div class="analytics-card">
+                        <div class="analytics-icon">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <div class="analytics-info">
+                            <span class="analytics-label">Longest Streak</span>
+                            <span class="analytics-value" id="longestStreak">0 days</span>
+                        </div>
+                    </div>
+                    <div class="analytics-card">
+                        <div class="analytics-icon">
+                            <i class="fas fa-money-bill"></i>
+                        </div>
+                        <div class="analytics-info">
+                            <span class="analytics-label">Remaining Money</span>
+                            <span class="analytics-value" id="analyticsRemaining">NPR 1,00,00,000</span>
+                        </div>
+                    </div>
+                    <div class="analytics-card">
+                        <div class="analytics-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="analytics-info">
+                            <span class="analytics-label">Predicted Finish</span>
+                            <span class="analytics-value" id="predictedFinish">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-card">
+                        <h3>Income by Day (Last 30 Days)</h3>
+                        <canvas id="dailyChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Income by Week</h3>
+                        <canvas id="weeklyChart"></canvas>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Income by Month</h3>
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Goal Calculator Section -->
+            <section id="calculator" class="section">
+                <div class="section-header">
+                    <h1>Goal Calculator</h1>
+                    <p class="subtitle">Calculate your targets and projections</p>
+                </div>
+
+                <div class="calculator-grid">
+                    <div class="calculator-card">
+                        <div class="calculator-icon">
+                            <i class="fas fa-calendar-day"></i>
+                        </div>
+                        <div class="calculator-info">
+                            <span class="calculator-label">Daily Target</span>
+                            <span class="calculator-value" id="calcDailyTarget">NPR 2,740</span>
+                            <span class="calculator-hint">Earn this much every day to reach your goal</span>
+                        </div>
+                    </div>
+                    <div class="calculator-card">
+                        <div class="calculator-icon">
+                            <i class="fas fa-calendar-week"></i>
+                        </div>
+                        <div class="calculator-info">
+                            <span class="calculator-label">Weekly Target</span>
+                            <span class="calculator-value" id="calcWeeklyTarget">NPR 19,178</span>
+                            <span class="calculator-hint">Earn this much every week to reach your goal</span>
+                        </div>
+                    </div>
+                    <div class="calculator-card">
+                        <div class="calculator-icon">
+                            <i class="fas fa-calendar-month"></i>
+                        </div>
+                        <div class="calculator-info">
+                            <span class="calculator-label">Monthly Target</span>
+                            <span class="calculator-value" id="calcMonthlyTarget">NPR 82,192</span>
+                            <span class="calculator-hint">Earn this much every month to reach your goal</span>
+                        </div>
+                    </div>
+                    <div class="calculator-card">
+                        <div class="calculator-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <div class="calculator-info">
+                            <span class="calculator-label">Catch-up Amount</span>
+                            <span class="calculator-value" id="calcCatchup">NPR 0</span>
+                            <span class="calculator-hint">Extra needed today to catch up</span>
+                        </div>
+                    </div>
+                    <div class="calculator-card">
+                        <div class="calculator-icon">
+                            <i class="fas fa-calendar-check"></i>
+                        </div>
+                        <div class="calculator-info">
+                            <span class="calculator-label">Expected Completion</span>
+                            <span class="calculator-value" id="calcCompletion">Dec 31, 2024</span>
+                            <span class="calculator-hint">Projected finish date at current pace</span>
+                        </div>
+                    </div>
+                    <div class="calculator-card">
+                        <div class="calculator-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="calculator-info">
+                            <span class="calculator-label">Days Behind/Ahead</span>
+                            <span class="calculator-value" id="calcDaysBehind">0 days</span>
+                            <span class="calculator-hint">Your current pace vs. target</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="projection-chart">
+                    <h3>Progress Projection</h3>
+                    <div class="projection-visual">
+                        <div class="projection-bar">
+                            <div class="projection-fill" id="projectionFill"></div>
+                            <div class="projection-marker" id="projectionMarker"></div>
+                        </div>
+                        <div class="projection-labels">
+                            <span>Start</span>
+                            <span>Target</span>
+                            <span>Current</span>
+                            <span>Goal</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Achievements Section -->
+            <section id="achievements" class="section">
+                <div class="section-header">
+                    <h1>Achievements</h1>
+                    <p class="subtitle">Unlock badges as you progress</p>
+                </div>
+
+                <div class="achievements-stats">
+                    <div class="achievement-stat">
+                        <span class="achievement-stat-value" id="achievementsUnlocked">0</span>
+                        <span class="achievement-stat-label">Unlocked</span>
+                    </div>
+                    <div class="achievement-stat">
+                        <span class="achievement-stat-value" id="achievementsTotal">13</span>
+                        <span class="achievement-stat-label">Total</span>
+                    </div>
+                    <div class="achievement-stat">
+                        <span class="achievement-stat-value" id="achievementsProgress">0%</span>
+                        <span class="achievement-stat-label">Progress</span>
+                    </div>
+                </div>
+
+                <div class="achievements-grid" id="achievementsGrid">
+                    <!-- Achievements will be populated by JavaScript -->
+                </div>
+            </section>
+
+            <!-- Calendar Section -->
+            <section id="calendar" class="section">
+                <div class="section-header">
+                    <h1>Calendar</h1>
+                    <p class="subtitle">View your earnings by date</p>
+                </div>
+
+                <div class="calendar-controls">
+                    <button class="btn btn-icon" onclick="prevMonth()">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <h3 id="calendarMonthYear">January 2024</h3>
+                    <button class="btn btn-icon" onclick="nextMonth()">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <div class="calendar-weekdays">
+                    <span>Sun</span>
+                    <span>Mon</span>
+                    <span>Tue</span>
+                    <span>Wed</span>
+                    <span>Thu</span>
+                    <span>Fri</span>
+                    <span>Sat</span>
+                </div>
+
+                <div class="calendar-days" id="calendarDays">
+                    <!-- Calendar days will be populated by JavaScript -->
+                </div>
+
+                <div class="calendar-legend">
+                    <div class="legend-item">
+                        <span class="legend-color high"></span>
+                        <span>High Earnings</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color medium"></span>
+                        <span>Medium Earnings</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color low"></span>
+                        <span>Low Earnings</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color none"></span>
+                        <span>No Earnings</span>
+                    </div>
+                </div>
+
+                <div class="calendar-summary">
+                    <h3>Month Summary</h3>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <span class="summary-label">Total Earnings</span>
+                            <span class="summary-value" id="calendarTotal">NPR 0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Days with Earnings</span>
+                            <span class="summary-value" id="calendarDaysWithEarnings">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label">Average Daily</span>
+                            <span class="summary-value" id="calendarAvgDaily">NPR 0</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <footer class="footer">
+                <p>1 Crore Challenge &copy; <span id="currentYear"></span> | Built with <i class="fas fa-heart"></i></p>
+            </footer>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
